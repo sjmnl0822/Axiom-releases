@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Axiom</title>
+<!-- Axiom's Discord page, on the Axiom-releases repository's GitHub Pages
+     (docs/discord.html):
+       ?s=<state>  verifying: this browser's fingerprint (a SHA-256) goes to
+                   discord-verify, then on to Discord's Authorize
+       ?r=<result> how verifying or linking (discord-link) went -->
+<style>
+  :root { --bg: #151515; --card: #1b1b1b; --border: #252525; --title: #ebebeb; --text: #b4b4b4; --muted: #767676;
+          --good: #5ecf8f; --bad: #eb7366; --wait: #e0b25a; }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { background: var(--bg); color: var(--text); font: 14px/1.6 "Segoe UI", "Malgun Gothic", system-ui, sans-serif;
+         display: flex; align-items: center; justify-content: center; padding: 16px; }
+  .card { width: 100%; max-width: 340px; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 28px 24px 22px; text-align: center; }
+  .brand { display: flex; align-items: center; justify-content: center; gap: 9px; color: var(--title); font-size: 20px; font-weight: 600; margin-bottom: 22px; }
+  .brand svg { width: 20px; height: 20px; fill: var(--title); }
+  .mark { width: 42px; height: 42px; border-radius: 21px; margin: 0 auto 14px; display: flex; align-items: center; justify-content: center; }
+  .mark svg { width: 20px; height: 20px; fill: none; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+  .good .mark { background: rgba(94, 207, 143, 0.14); } .good .mark svg { stroke: var(--good); }
+  .bad .mark { background: rgba(235, 115, 102, 0.14); } .bad .mark svg { stroke: var(--bad); }
+  .wait .mark { background: rgba(224, 178, 90, 0.14); } .wait .mark svg { stroke: var(--wait); }
+  .busy .mark { border: 2px solid var(--border); border-top-color: var(--title); animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  h1 { color: var(--title); font-size: 17px; font-weight: 600; margin: 0 0 6px; }
+  p { margin: 0; }
+  .note { color: var(--muted); font-size: 12px; margin-top: 18px; }
+</style>
+</head>
+<body>
+<main class="card busy" id="card">
+  <div class="brand">
+    <svg viewBox="19 20 82 80" aria-hidden="true"><path d="M44 20H76Q80 20 81.4 25L100.3 94 82 100 65 38H55L38 100 19.6 94 38.6 25Q40 20 44 20Z"/><path d="M45.6 65H62.4L67 82H41Z"/></svg>
+    Axiom
+  </div>
+  <div class="mark" id="mark"></div>
+  <h1 id="title">확인 중 · Checking</h1>
+  <p id="text">잠시만 기다려 주세요. · One moment.</p>
+  <p class="note" id="note"></p>
+</main>
+<script>
+  const VERIFY = "https://znbnrmxxnlsjnhcvwqvi.supabase.co/functions/v1/discord-verify";
+  const marks = {
+    good: '<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+    bad: '<svg viewBox="0 0 24 24"><path d="M7 7l10 10M17 7L7 17"/></svg>',
+    wait: '<svg viewBox="0 0 24 24"><path d="M12 7v5l3 2"/><circle cx="12" cy="12" r="8"/></svg>',
+  };
+  // How it went: its look, heading and words (Korean, then English).
+  const results = {
+    ok:        ["good", "디스코드가 연결되었습니다", "Discord is linked to your account."],
+    buyer:     ["good", "디스코드가 연결되었습니다", "Discord is linked to your account.<br>구매자 채널이 열렸습니다. · The buyer channel is open to you."],
+    verified:  ["good", "인증되었습니다", "You're verified: the server is open to you.<br>디스코드로 돌아가세요. · Go back to Discord."],
+    pending:   ["wait", "관리자 확인을 기다리는 중입니다", "다른 계정과 접속 정보가 같아 관리자가 확인한 뒤 인증됩니다.<br>Your connection matches another account's, so the staff will check it first."],
+    cancelled: ["bad", "취소되었습니다", "It was cancelled.<br>디스코드에서 다시 시도해 주세요. · Try again from Discord."],
+    expired:   ["bad", "링크가 만료되었습니다", "This link ran out.<br>디스코드에서 버튼을 다시 눌러 주세요. · Press the button in Discord again."],
+    mismatch:  ["bad", "다른 디스코드 계정입니다", "You signed in to Discord as someone else than who pressed the button.<br>버튼을 누른 계정으로 승인해 주세요."],
+    failed:    ["bad", "확인하지 못했습니다", "Discord couldn't confirm it. Try again in a moment.<br>잠시 후 다시 시도해 주세요."],
+  };
+  function show(key) {
+    const r = results[key] || results.failed;
+    document.getElementById("card").className = "card " + r[0];
+    document.getElementById("mark").innerHTML = marks[r[0]];
+    document.getElementById("title").textContent = r[1];
+    document.getElementById("text").innerHTML = r[2];
+    document.getElementById("note").textContent = "이 창은 닫아도 됩니다 · You can close this window";
+  }
+
+  // This browser, as a hash: how it draws, its screen, graphics, language and time zone.
+  async function fingerprint() {
+    const c = document.createElement("canvas");
+    c.width = 240; c.height = 60;
+    const x = c.getContext("2d");
+    x.textBaseline = "top"; x.font = "16px Arial";
+    x.fillStyle = "#f60"; x.fillRect(10, 10, 100, 30);
+    x.fillStyle = "#069"; x.fillText("Axiom verify 인증", 4, 20);
+    x.fillStyle = "rgba(102, 204, 0, 0.7)"; x.fillText("Axiom verify 인증", 6, 22);
+    let gpu = "";
+    try {
+      const gl = document.createElement("canvas").getContext("webgl");
+      const info = gl.getExtension("WEBGL_debug_renderer_info");
+      gpu = gl.getParameter(info.UNMASKED_VENDOR_WEBGL) + "|" + gl.getParameter(info.UNMASKED_RENDERER_WEBGL);
+    } catch (e) {}
+    const parts = [navigator.userAgent, navigator.language, (navigator.languages || []).join(","), navigator.platform,
+      navigator.hardwareConcurrency, navigator.deviceMemory, screen.width + "x" + screen.height + "x" + screen.colorDepth,
+      devicePixelRatio, Intl.DateTimeFormat().resolvedOptions().timeZone, c.toDataURL(), gpu];
+    const bytes = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(parts.join("||"))));
+    return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+  }
+
+  const q = new URLSearchParams(location.search);
+  if (q.get("s")) {
+    (async () => {
+      try {
+        const answer = await fetch(VERIFY, { method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ state: q.get("s"), fp: await fingerprint() }) });
+        const j = await answer.json();
+        if (j.ok && j.url) location.replace(j.url);
+        else show(j.result || "failed");
+      } catch (e) { show("failed"); }
+    })();
+  }
+  else show(q.get("r"));
+</script>
+</body>
+</html>
