@@ -5,11 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
 <title>Axiom</title>
-<!-- Axiom's Discord page, on the Axiom-releases repository's GitHub Pages
-     (docs/discord.html):
-       ?s=<state>  verifying: this browser's fingerprint (a SHA-256) goes to
-                   discord-verify, then on to Discord's Authorize
-       ?r=<result> how verifying or linking (discord-link) went -->
+
 <style>
   :root { --bg: #151515; --card: #1b1b1b; --border: #252525; --title: #ebebeb; --text: #b4b4b4; --muted: #767676;
           --good: #5ecf8f; --bad: #eb7366; --wait: #e0b25a; }
@@ -50,7 +46,6 @@
     bad: '<svg viewBox="0 0 24 24"><path d="M7 7l10 10M17 7L7 17"/></svg>',
     wait: '<svg viewBox="0 0 24 24"><path d="M12 7v5l3 2"/><circle cx="12" cy="12" r="8"/></svg>',
   };
-  // How it went: its look, heading and words (Korean, then English).
   const results = {
     ok:        ["good", "디스코드가 연결되었습니다", "Discord is linked to your account."],
     buyer:     ["good", "디스코드가 연결되었습니다", "Discord is linked to your account.<br>구매자 채널이 열렸습니다. · The buyer channel is open to you."],
@@ -70,7 +65,6 @@
     document.getElementById("note").textContent = "이 창은 닫아도 됩니다 · You can close this window";
   }
 
-  // This browser, as a hash: how it draws, its screen, graphics, language and time zone.
   async function fingerprint() {
     const c = document.createElement("canvas");
     c.width = 240; c.height = 60;
