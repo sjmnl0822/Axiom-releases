@@ -5,7 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
 <title>Axiom</title>
-
+<!-- Axiom's Discord page, on the Axiom-releases repository's GitHub Pages
+     (docs/discord.html):
+       ?s=<state>  verifying: this browser's fingerprint (a SHA-256) goes to
+                   discord-verify, then on to Discord's Authorize
+       ?r=<result> how verifying or linking (discord-link) went -->
 <style>
   :root { --bg: #151515; --card: #1b1b1b; --border: #252525; --title: #ebebeb; --text: #b4b4b4; --muted: #767676;
           --good: #5ecf8f; --bad: #eb7366; --wait: #e0b25a; }
@@ -46,11 +50,14 @@
     bad: '<svg viewBox="0 0 24 24"><path d="M7 7l10 10M17 7L7 17"/></svg>',
     wait: '<svg viewBox="0 0 24 24"><path d="M12 7v5l3 2"/><circle cx="12" cy="12" r="8"/></svg>',
   };
+  // How it went: its look, heading and words (Korean, then English).
   const results = {
     ok:        ["good", "디스코드가 연결되었습니다", "Discord is linked to your account."],
     buyer:     ["good", "디스코드가 연결되었습니다", "Discord is linked to your account.<br>구매자 채널이 열렸습니다. · The buyer channel is open to you."],
     verified:  ["good", "인증되었습니다", "You're verified: the server is open to you.<br>디스코드로 돌아가세요. · Go back to Discord."],
-    pending:   ["wait", "관리자 확인을 기다리는 중입니다", "다른 계정과 접속 정보가 같아 관리자가 확인한 뒤 인증됩니다.<br>Your connection matches another account's, so the staff will check it first."],
+    pending:   ["wait", "관리자 확인을 기다리는 중입니다", "관리자가 계정을 확인한 뒤 인증됩니다.<br>The staff will check your account before you're verified."],
+    denied:    ["bad", "인증할 수 없습니다", "이 계정은 인증할 수 없습니다. 잘못된 것 같다면 관리자에게 문의하세요.<br>This account can't be verified. Ask the staff if you think it's a mistake."],
+    email:     ["bad", "이메일 인증이 필요합니다", "디스코드 설정 > 내 계정에서 이메일을 인증한 뒤 버튼을 다시 눌러 주세요.<br>Verify your email in Discord (Settings > My Account), then press the button again."],
     cancelled: ["bad", "취소되었습니다", "It was cancelled.<br>디스코드에서 다시 시도해 주세요. · Try again from Discord."],
     expired:   ["bad", "링크가 만료되었습니다", "This link ran out.<br>디스코드에서 버튼을 다시 눌러 주세요. · Press the button in Discord again."],
     mismatch:  ["bad", "다른 디스코드 계정입니다", "You signed in to Discord as someone else than who pressed the button.<br>버튼을 누른 계정으로 승인해 주세요."],
@@ -65,6 +72,7 @@
     document.getElementById("note").textContent = "이 창은 닫아도 됩니다 · You can close this window";
   }
 
+  // This browser, as a hash: how it draws, its screen, graphics, language and time zone.
   async function fingerprint() {
     const c = document.createElement("canvas");
     c.width = 240; c.height = 60;
